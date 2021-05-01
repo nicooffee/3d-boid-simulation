@@ -3,10 +3,10 @@ import random as r
 import Vector as v
 import time
 
-VELM_MIN = 5.0
+VELM_MIN = 8.0
 VELM_MAX = 10.0
-ACLM_MIN = 0.5
-ACLM_MAX = 1.0
+ACLM_MIN = 1
+ACLM_MAX = 2.0
 
 class Boid:
     def __init__(self,id,radio,min_x,max_x,min_y,max_y):
@@ -22,7 +22,7 @@ class Boid:
         self.aceleracion = np.array([0.0,0.0])
         self.velocidad_max = (VELM_MAX-VELM_MIN) * r.random() + VELM_MIN
         self.fuerza_max = (ACLM_MAX-ACLM_MIN) * r.random() + ACLM_MIN
-        self.last_c_neigh = 0
+        self.last_boid_in_range = 0
 
 
     def mover(self):
@@ -30,16 +30,24 @@ class Boid:
         self.posicion = self.posicion + self.velocidad
         self.velocidad = self.velocidad + self.aceleracion
         self.aceleracion = np.zeros(2)
-        #percent_x = np.divide((self.posicion[0] + self.x_limits[0]),self.x_limits[0]+self.x_limits[1])
-        #percent_y = np.divide((self.posicion[1] + self.y_limits[0]),self.y_limits[0]+self.y_limits[1])
-        if self.posicion[0] > self.x_limits[1]:
-            self.posicion[0] = self.x_limits[0]
-        elif self.posicion[0] < self.x_limits[0]:
-            self.posicion[0] = self.x_limits[1]
-        if self.posicion[1] > self.y_limits[1]:
-            self.posicion[1] = self.y_limits[0]
-        elif self.posicion[1] < self.y_limits[0]:
-            self.posicion[1] = self.y_limits[1]
+        percent_x = np.divide((self.posicion[0] + self.x_limits[0]),self.x_limits[0]+self.x_limits[1])
+        percent_y = np.divide((self.posicion[1] + self.y_limits[0]),self.y_limits[0]+self.y_limits[1])
+        acl_rebote_x = np.zeros(2)
+        acl_rebote_y = np.zeros(2)
+        inner_p = 0
+        if percent_x < 0.05:
+            inner_p = (percent_x-0.05)/(-0.05)
+            acl_rebote_x = v.set_mag(np.array([1,0]),4*self.fuerza_max*inner_p)
+        elif percent_x > 0.95:
+            inner_p = (percent_x-0.95)/(1-0.95)
+            acl_rebote_x = v.set_mag(np.array([-1,0]),4*self.fuerza_max*inner_p)
+        if percent_y < 0.05:
+            inner_p = (percent_y-0.05)/(-0.05)
+            acl_rebote_y = v.set_mag(np.array([0,10]),4*self.fuerza_max*inner_p)
+        elif percent_y > 0.95:
+            inner_p = (percent_y-0.95)/(1-0.95)
+            acl_rebote_y = v.set_mag(np.array([0,-1]),4*self.fuerza_max*inner_p)
+        self.velocidad = self.velocidad + acl_rebote_x + acl_rebote_y
 
 
     def flock(self,flock):
@@ -47,8 +55,11 @@ class Boid:
         suma_c = np.zeros(2)
         suma_r = np.zeros(2)
         boid_added = 0
+        boid_in_range = 0
         for boid in flock:
             d = self.distancia(boid)
+            if d<=self.radio:
+                boid_in_range += 1
             if boid.id != self.id and self.en_rango(boid):
                 suma_a = suma_a + boid.velocidad
                 suma_c = suma_c + boid.posicion
@@ -66,9 +77,9 @@ class Boid:
             suma_r = np.divide(suma_r,boid_added)
             suma_r = v.set_mag(suma_r,self.velocidad_max)
             suma_r = suma_r - self.velocidad
-        self.last_c_neigh = boid_added
+        self.last_boid_in_range = boid_in_range
         suma_a = v.limit(suma_a,self.fuerza_max)
-        suma_r = v.limit(suma_r,self.fuerza_max*0.5)
+        suma_r = v.limit(suma_r,self.fuerza_max)
         suma_c = v.limit(suma_c,self.fuerza_max)
         return suma_a+suma_r+suma_c
 
@@ -80,7 +91,7 @@ class Boid:
         return np.linalg.norm(self.posicion-boid.posicion)
 
     def en_rango(self,boid):
-        return self.distancia(boid) <= self.radio and v.angle(self.velocidad,boid.velocidad) <= self.angulo_vision
+        return self.distancia(boid) <= self.radio and v.angle(self.posicion,boid.posicion) <= self.angulo_vision
 
     #########################################################
 

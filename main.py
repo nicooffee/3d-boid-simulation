@@ -32,8 +32,8 @@ def display():
     glClearColor(0.15,0.15,0.15,1)
     glPointSize(10.0)
     glBegin(GL_POINTS)
-    for (coor,last_c_neigh) in flock.flocking():
-        percent = (last_c_neigh*2)/len(flock)
+    for (coor,boid_in_range) in flock.flocking():
+        percent = (boid_in_range*2)/len(flock)
         glColor3f(1.0 - percent,percent,percent)
         glVertex2f(*(coor))
     glEnd()
