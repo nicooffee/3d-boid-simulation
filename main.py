@@ -6,9 +6,9 @@ from Flock import Flock
 from Boid import Boid
 
 MIN_X_C = 0
-MAX_X_C = 640
+MAX_X_C = 1900
 MIN_Y_C = 0
-MAX_Y_C = 480
+MAX_Y_C = 1900
 
 flock = Flock(MIN_X_C,MAX_X_C,MIN_Y_C,MAX_Y_C)
 
@@ -32,19 +32,17 @@ def display():
     glClearColor(0.15,0.15,0.15,1)
     glPointSize(10.0)
     glBegin(GL_POINTS)
-    for boid in flock:
-        boid.flock(flock)
-        boid.mover()
-        percent = (boid.last_c_neigh+10)/len(flock)
+    for (coor,last_c_neigh) in flock.flocking():
+        percent = (last_c_neigh*2)/len(flock)
         glColor3f(1.0 - percent,percent,percent)
-        glVertex2f(*(boid.show()))
+        glVertex2f(*(coor))
     glEnd()
     glFlush()    
 
 
 glutInit()
 glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE)
-glutInitWindowSize(640, 480)
+glutInitWindowSize(900, 900)
 gluOrtho2D(MIN_X_C,MAX_X_C,MIN_Y_C,MAX_Y_C)
 glutCreateWindow("Flocking simulation")
 glutReshapeFunc(reshape)

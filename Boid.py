@@ -2,10 +2,17 @@ import numpy as np
 import random as r
 import Vector as v
 import time
+
+VELM_MIN = 5.0
+VELM_MAX = 10.0
+ACLM_MIN = 0.5
+ACLM_MAX = 1.0
+
 class Boid:
     def __init__(self,id,radio,min_x,max_x,min_y,max_y):
         self.id = id
         self.radio = radio
+        self.angulo_vision = 135
         self.x_limits = [min_x,max_x]
         self.y_limits = [min_y,max_y]
         r_x = (max_x - min_x) * r.random() + min_x
@@ -13,8 +20,8 @@ class Boid:
         self.posicion = np.array([r_x,r_y])
         self.velocidad = np.array([r.random(),r.random()])
         self.aceleracion = np.array([0.0,0.0])
-        self.fuerza_max = 2
-        self.velocidad_max = 10.0
+        self.velocidad_max = (VELM_MAX-VELM_MIN) * r.random() + VELM_MIN
+        self.fuerza_max = (ACLM_MAX-ACLM_MIN) * r.random() + ACLM_MIN
         self.last_c_neigh = 0
 
 
@@ -22,6 +29,9 @@ class Boid:
         self.velocidad = v.limit(self.velocidad,self.velocidad_max)
         self.posicion = self.posicion + self.velocidad
         self.velocidad = self.velocidad + self.aceleracion
+        self.aceleracion = np.zeros(2)
+        #percent_x = np.divide((self.posicion[0] + self.x_limits[0]),self.x_limits[0]+self.x_limits[1])
+        #percent_y = np.divide((self.posicion[1] + self.y_limits[0]),self.y_limits[0]+self.y_limits[1])
         if self.posicion[0] > self.x_limits[1]:
             self.posicion[0] = self.x_limits[0]
         elif self.posicion[0] < self.x_limits[0]:
@@ -33,22 +43,17 @@ class Boid:
 
 
     def flock(self,flock):
-        #fuerza_alineamiento = v.limit(self.alinear(flock),self.fuerza_max)
-        #fuerza_cohesion = v.limit(self.cohesionar(flock),self.fuerza_max)
-        #fuerza_separacion = v.limit(self.separar(flock),self.fuerza_max)
-        self.aceleracion = self.update_acr(flock)#fuerza_alineamiento + fuerza_cohesion + fuerza_separacion
-
-    def update_acr(self,flock):
         suma_a = np.zeros(2)
         suma_c = np.zeros(2)
         suma_r = np.zeros(2)
         boid_added = 0
         for boid in flock:
+            d = self.distancia(boid)
             if boid.id != self.id and self.en_rango(boid):
                 suma_a = suma_a + boid.velocidad
                 suma_c = suma_c + boid.posicion
                 dif = self.posicion - boid.posicion
-                suma_r = suma_r + np.divide(dif,self.distancia(boid))
+                suma_r = suma_r + np.divide(dif,d if d>0 else 0.00001)
                 boid_added = boid_added + 1
         if boid_added > 0:
             suma_a = np.divide(suma_a,boid_added)
@@ -63,10 +68,24 @@ class Boid:
             suma_r = suma_r - self.velocidad
         self.last_c_neigh = boid_added
         suma_a = v.limit(suma_a,self.fuerza_max)
-        suma_r = v.limit(suma_r,self.fuerza_max)
+        suma_r = v.limit(suma_r,self.fuerza_max*0.5)
         suma_c = v.limit(suma_c,self.fuerza_max)
-        return suma_a+suma_c+suma_r
+        return suma_a+suma_r+suma_c
 
+
+    def show(self):
+        return self.posicion
+
+    def distancia(self,boid):
+        return np.linalg.norm(self.posicion-boid.posicion)
+
+    def en_rango(self,boid):
+        return self.distancia(boid) <= self.radio and v.angle(self.velocidad,boid.velocidad) <= self.angulo_vision
+
+    #########################################################
+
+
+'''
     def alinear(self,flock):
         suma = np.zeros(2)
         boid_added = 0
@@ -112,12 +131,4 @@ class Boid:
         self.last_c_neigh = boid_added
         return suma
 
-    def show(self):
-        return self.posicion
-
-    def distancia(self,boid):
-        return np.linalg.norm(self.posicion-boid.posicion)
-
-    def en_rango(self,boid):
-        return self.distancia(boid)<=self.radio
-    #########################################################
+'''
