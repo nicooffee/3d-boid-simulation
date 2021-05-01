@@ -1,6 +1,6 @@
 from Boid import Boid
 class Flock:
-    def __init__(self,min_x,max_x,min_y,max_y,radio=50,cant=50):
+    def __init__(self,min_x,max_x,min_y,max_y,radio=60,cant=100):
         self.boids = list()
         for i in range(cant):
             b = Boid(i,radio,min_x,max_x,min_y,max_y)
