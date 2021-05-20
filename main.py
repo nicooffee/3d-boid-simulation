@@ -20,7 +20,7 @@ def randomFloat():
 # from 0 to 1 in the x and y directions, and -1 to 1 in z.
 def reshape(width, height):
     glViewport(0, 0, width, height)
-    glMatrixMode(GL_PROJECTION)
+    glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     gluOrtho2D(MIN_X_C,MAX_X_C,MIN_Y_C,MAX_Y_C)
 

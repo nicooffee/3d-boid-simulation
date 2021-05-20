@@ -3,7 +3,7 @@ import random as r
 import Vector as v
 import time
 
-VELM_MIN = 8.0
+VELM_MIN = 10.0
 VELM_MAX = 10.0
 ACLM_MIN = 1
 ACLM_MAX = 2.0
@@ -51,9 +51,9 @@ class Boid:
 
 
     def flock(self,flock):
-        suma_a = np.zeros(2)
-        suma_c = np.zeros(2)
-        suma_r = np.zeros(2)
+        suma_a = np.zeros(2) #vector alineamiento
+        suma_c = np.zeros(2) #vector cohesion
+        suma_r = np.zeros(2) #vector separacion
         boid_added = 0
         boid_in_range = 0
         for boid in flock:
@@ -81,7 +81,7 @@ class Boid:
         suma_a = v.limit(suma_a,self.fuerza_max)
         suma_r = v.limit(suma_r,self.fuerza_max)
         suma_c = v.limit(suma_c,self.fuerza_max)
-        return suma_a+suma_r+suma_c
+        return suma_a+suma_r*1.35+suma_c
 
 
     def show(self):
@@ -91,7 +91,7 @@ class Boid:
         return np.linalg.norm(self.posicion-boid.posicion)
 
     def en_rango(self,boid):
-        return self.distancia(boid) <= self.radio and v.angle(self.posicion,boid.posicion) <= self.angulo_vision
+        return self.distancia(boid) <= self.radio and v.angle(self.velocidad,boid.posicion-self.posicion) <= self.angulo_vision
 
     #########################################################
 
