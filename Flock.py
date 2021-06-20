@@ -1,9 +1,9 @@
 from Boid import Boid
 class Flock:
-    def __init__(self,min_x,max_x,min_y,max_y,radio=200,cant=30):
+    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=200,cant=20):
         self.boids = list()
         for i in range(cant):
-            b = Boid(i,radio,min_x,max_x,min_y,max_y)
+            b = Boid(i,radio,min_x,max_x,min_y,max_y,min_z,max_z)
             self.boids.append(b)
 
     def __iter__(self):
