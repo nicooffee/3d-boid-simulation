@@ -98,11 +98,15 @@ class Boid:
         suma_a = v.limit(suma_a,self.fuerza_max)
         suma_r = v.limit(suma_r,self.fuerza_max)
         suma_c = v.limit(suma_c,self.fuerza_max)
-        return suma_a+suma_r*1.23+suma_c
+        return suma_a+suma_r*1.3+suma_c
 
 
     def show(self):
         return self.posicion
+
+    def coords(self):
+        p = self.posicion
+        return (p[0],p[1],p[2])
 
     def distancia(self,boid):
         return np.linalg.norm(self.posicion-boid.posicion)

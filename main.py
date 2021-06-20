@@ -2,7 +2,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from Flock import Flock
+from FlockOctree import Flock
 from Boid import Boid
 
 GRID_COLOR = (0.4,0.4,0.4)
