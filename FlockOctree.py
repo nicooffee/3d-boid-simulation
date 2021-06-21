@@ -3,14 +3,13 @@ sys.path.append('./octrees')
 from octrees import Octree
 from Boid import Boid
 class Flock:
-    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=100,cant=100):
+    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=200,cant=20):
         self.boids = list()
         self.octree = Octree(((min_x-10, max_x+10), (min_y-10, max_y+10), (min_z-10, max_z+10)))
         for i in range(cant):
             b = Boid(i,radio,min_x,max_x,min_y,max_y,min_z,max_z)
             self.boids.append(b)
             self.octree.insert(b.coords(),b)
-
     def __iter__(self):
         for boid in self.boids:
             yield boid
@@ -18,6 +17,9 @@ class Flock:
     def __len__(self):
         return len(self.boids)
 
+    def show(self):
+        for boid in self.boids:
+            yield (boid.show(),boid.last_boid_in_range)
 
     def flocking(self):
         for boid in self.boids:
@@ -25,9 +27,9 @@ class Flock:
             try:
                 self.octree.remove(p)
                 dis_cor_val = self.octree.by_distance_from_point(p,boid.radio)
-                boid.aceleracion = boid.flock(map(lambda dcv_tuple: dcv_tuple[2],dis_cor_val))
+                boid.aceleracion = boid.flock(list(map(lambda dcv_tuple: dcv_tuple[2],dis_cor_val)))
                 boid.mover()
-                yield (boid.show(),boid.last_boid_in_range)
+                #yield (boid.show(),boid.last_boid_in_range)
                 self.octree.insert(boid.coords(),boid)
             except Exception as e:
                 print("error", e.__class__,e)

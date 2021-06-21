@@ -5,14 +5,14 @@ import time
 
 VELM_MIN = 10.0
 VELM_MAX = 10.0
-ACLM_MIN = 2.5
+ACLM_MIN = 1.5
 ACLM_MAX = 2.5
 
 class Boid:
     def __init__(self,id,radio,min_x,max_x,min_y,max_y,min_z,max_z):
         self.id = id
         self.radio = radio
-        self.angulo_vision = 135
+        self.angulo_vision = 150
         self.x_limits = [min_x,max_x]
         self.y_limits = [min_y,max_y]
         self.z_limits = [min_z,max_z]
@@ -73,7 +73,7 @@ class Boid:
         suma_r = np.zeros(3) #vector separacion
         boid_added = 0
         boid_in_range = 0
-        for boid in flock:
+        for boid in flock[:10]:
             d = self.distancia(boid)
             if d<=self.radio:
                 boid_in_range += 1
@@ -98,7 +98,7 @@ class Boid:
         suma_a = v.limit(suma_a,self.fuerza_max)
         suma_r = v.limit(suma_r,self.fuerza_max)
         suma_c = v.limit(suma_c,self.fuerza_max)
-        return suma_a+suma_r*1.3+suma_c
+        return suma_a+suma_r*1.2+suma_c
 
 
     def show(self):

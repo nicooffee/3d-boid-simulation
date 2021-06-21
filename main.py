@@ -69,7 +69,7 @@ def display():
     global n
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glClearColor(0.05,0.05,0.05,1)
-    glPointSize(10.0)
+    glPointSize(5.0)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     glPushMatrix()
@@ -81,7 +81,8 @@ def display():
     set_wall_grid()
     glEnd()
     glBegin(GL_POINTS)
-    for (coor,boid_in_range) in flock.flocking():
+    flock.flocking()
+    for (coor,boid_in_range) in flock.show():
         percent = (boid_in_range*2)/len(flock)
         glColor3f(1.0 - percent,percent,percent)
         glVertex3f(*(coor))
