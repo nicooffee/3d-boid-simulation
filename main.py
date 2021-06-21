@@ -83,7 +83,7 @@ def display():
     glBegin(GL_POINTS)
     flock.flocking()
     for (coor,boid_in_range) in flock.show():
-        percent = (boid_in_range*2)/len(flock)
+        percent = (boid_in_range*10)/len(flock)
         glColor3f(1.0 - percent,percent,percent)
         glVertex3f(*(coor))
     glEnd()
