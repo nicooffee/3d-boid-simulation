@@ -6,7 +6,8 @@ from FlockOctree import Flock
 from Boid import Boid
 import asyncio
 from ctypes import *
-
+from multiprocessing import Process,Pipe, process
+import random as r
 GRID_COLOR = (0,0,0.45)
 GRID_SPACE = 40
 
@@ -22,11 +23,15 @@ D_MAX_Y_C = MAX_Y_C / 2
 D_MIN_Y_C = MIN_Y_C / 2
 D_MIN_Z_C = MIN_Z_C / 2
 D_MAX_Z_C = MAX_Z_C / 2
-
-flock = Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C)
-flock2 = Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C)
-flock3 = Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C)
-flocks = [flock,flock2,flock3]
+flocks = []
+col_fu = []
+for i in range(5):
+    flocks.append(Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C))
+    rr = r.random()
+    rg = r.random()
+    rb = r.random()
+    col_fu.append(lambda percent: (percent*rr,percent*rg,percent*rb,))
+LARGO_FLOCK = len(flocks[0])
 def set_wall_grid():
     glColor3f(*GRID_COLOR)
     for i in np.arange(D_MIN_Y_C,D_MAX_Y_C+1,GRID_SPACE):
@@ -70,20 +75,31 @@ def reshape(width, height):
     glLoadIdentity()
 
 
-async def do_flock(f):
-    #print("Procesando: {:}".format(i))
-    for (coor,boid_in_range) in f.show():
-        percent = (boid_in_range*10)/len(f)
-        glColor3f(1.0 - percent,percent,percent)
+def flocking_process(flock,conn):
+    while True:
+        flock.flocking()
+        for boid_data in flock.show():
+            conn.send(boid_data)
+            conn.recv()
+async def show_boid(conn,cant,color_function):
+    i = 0
+    while i<cant: #revisar esto
+        coor,boid_in_range = conn.recv()
+        percent = (boid_in_range*2)/cant
+        color = color_function(percent)
+        glColor3f(*color)
         glVertex3f(*(coor))
-    await f.flocking()
-    #print("Resultado: {:}".format(i))
-    #print(f)
-async def run_flock():
+        conn.send(True)
+        i = i + 1
+
+# estoy usando len(flock) asumiendo que todos tienen el mismo largo
+async def run_show_boid():
     tasks = []
-    for f in flocks:
-        tasks.append(do_flock(f))
+    L = len(flocks)
+    for i in range(L):
+        tasks.append(show_boid(pipes[i][0],LARGO_FLOCK,col_fu[i]))
     await asyncio.gather(*tasks)
+
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -100,7 +116,7 @@ def display():
     set_wall_grid()
     glEnd()
     glBegin(GL_POINTS)
-    asyncio.run(run_flock())
+    asyncio.run(run_show_boid())
     glEnd()
     glBegin(GL_LINES)
     set_upper_grid()
@@ -108,8 +124,16 @@ def display():
     glPopMatrix()
     glFlush()    
 
+pipes = []
+processes = []
 
-loop = asyncio.get_event_loop()
+for i in range(len(flocks)):
+    p_conn, c_conn = Pipe()
+    pipes.append((p_conn,c_conn,))
+    p = Process(target=flocking_process,args=(flocks[i],c_conn,))
+    p.start()
+    processes.append(p)
+
 glutInit()
 glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE)
 glutInitWindowSize(900, 900)

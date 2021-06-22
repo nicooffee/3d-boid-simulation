@@ -7,7 +7,7 @@ VELM_MIN = 10.0
 VELM_MAX = 20.0
 ACLM_MIN = 2.5
 ACLM_MAX = 3.5
-CONC_MIN = 5
+CONC_MIN = 10
 CONC_MAX = 20
 class Boid:
     def __init__(self,id,radio,min_x,max_x,min_y,max_y,min_z,max_z):
