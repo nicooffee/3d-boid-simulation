@@ -3,7 +3,7 @@ sys.path.append('./octrees')
 from octrees import Octree
 from Boid import Boid
 class Flock:
-    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=100,cant=60):
+    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=200,cant=50):
         self.boids = list()
         self.octree = Octree(((min_x-10, max_x+10), (min_y-10, max_y+10), (min_z-10, max_z+10)))
         for i in range(cant):
@@ -21,7 +21,7 @@ class Flock:
         for boid in self.boids:
             yield (boid.show(),boid.last_boid_in_range)
 
-    def flocking(self):
+    async def flocking(self):
         for boid in self.boids:
             p = boid.coords()
             try:

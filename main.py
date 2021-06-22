@@ -4,9 +4,11 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from FlockOctree import Flock
 from Boid import Boid
+import asyncio
+from ctypes import *
 
-GRID_COLOR = (0.4,0.4,0.4)
-GRID_SPACE = 20
+GRID_COLOR = (0,0,0.45)
+GRID_SPACE = 40
 
 MAX_X_C = 800
 MIN_X_C = -MAX_X_C
@@ -22,7 +24,9 @@ D_MIN_Z_C = MIN_Z_C / 2
 D_MAX_Z_C = MAX_Z_C / 2
 
 flock = Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C)
-
+flock2 = Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C)
+flock3 = Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C)
+flocks = [flock,flock2,flock3]
 def set_wall_grid():
     glColor3f(*GRID_COLOR)
     for i in np.arange(D_MIN_Y_C,D_MAX_Y_C+1,GRID_SPACE):
@@ -65,10 +69,25 @@ def reshape(width, height):
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
+
+async def do_flock(f):
+    #print("Procesando: {:}".format(i))
+    for (coor,boid_in_range) in f.show():
+        percent = (boid_in_range*10)/len(f)
+        glColor3f(1.0 - percent,percent,percent)
+        glVertex3f(*(coor))
+    await f.flocking()
+    #print("Resultado: {:}".format(i))
+    #print(f)
+async def run_flock():
+    tasks = []
+    for f in flocks:
+        tasks.append(do_flock(f))
+    await asyncio.gather(*tasks)
+
 def display():
-    global n
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glClearColor(0.05,0.05,0.05,1)
+    glClearColor(0.0,0.0,0.17,1)
     glPointSize(5.0)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
@@ -81,11 +100,7 @@ def display():
     set_wall_grid()
     glEnd()
     glBegin(GL_POINTS)
-    flock.flocking()
-    for (coor,boid_in_range) in flock.show():
-        percent = (boid_in_range*10)/len(flock)
-        glColor3f(1.0 - percent,percent,percent)
-        glVertex3f(*(coor))
+    asyncio.run(run_flock())
     glEnd()
     glBegin(GL_LINES)
     set_upper_grid()
@@ -94,6 +109,7 @@ def display():
     glFlush()    
 
 
+loop = asyncio.get_event_loop()
 glutInit()
 glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE)
 glutInitWindowSize(900, 900)
