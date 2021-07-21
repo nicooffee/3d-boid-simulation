@@ -25,7 +25,7 @@ D_MIN_Z_C = MIN_Z_C / 2
 D_MAX_Z_C = MAX_Z_C / 2
 flocks = []
 col_fu = []
-for i in range(5):
+for i in range(4):
     flocks.append(Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C))
     rr = r.random()
     rg = r.random()
@@ -76,11 +76,13 @@ def reshape(width, height):
 
 
 def flocking_process(flock,conn):
-    while True:
+    flag = True
+    while flag:
         flock.flocking()
         for boid_data in flock.show():
             conn.send(boid_data)
             conn.recv()
+
 async def show_boid(conn,cant,color_function):
     i = 0
     while i<cant: #revisar esto
@@ -113,7 +115,7 @@ def display():
     gluLookAt(MAX_X_C,MAX_Y_C,MIN_Z_C,MIN_X_C,MIN_Y_C,MAX_Z_C,0,1,0)
     glBegin(GL_LINES)
     set_bottom_grid()
-    set_wall_grid()
+    #set_wall_grid()
     glEnd()
     glBegin(GL_POINTS)
     asyncio.run(run_show_boid())
@@ -124,6 +126,9 @@ def display():
     glPopMatrix()
     glFlush()    
 
+
+
+
 pipes = []
 processes = []
 
@@ -133,6 +138,14 @@ for i in range(len(flocks)):
     p = Process(target=flocking_process,args=(flocks[i],c_conn,))
     p.start()
     processes.append(p)
+
+def keyboard_options(key,x,y):
+    d_key = key.decode('utf-8')
+    if key == b'\x1B': #ESCAPE \x[HEXADECIMAL]
+        for p in processes:
+            p.terminate()
+        glutLeaveMainLoop()
+        glutDestroyWindow(glutGetWindow())
 
 glutInit()
 glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE)
@@ -145,6 +158,7 @@ glEnable(GL_DEPTH_TEST)
 glShadeModel(GL_FLAT)
 glDisable(GL_CULL_FACE)
 glutReshapeFunc(reshape)
+glutKeyboardFunc(keyboard_options)
 glutDisplayFunc(display)
 glutIdleFunc(display)
 glutMainLoop()
