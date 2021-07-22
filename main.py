@@ -9,11 +9,11 @@ from FlockOctree import Flock
 from Boid import Boid
 import asyncio
 from ctypes import *
-from multiprocessing import Process,Pipe, process
+from multiprocessing import Process,Pipe,Queue
 import random as r
 GRID_COLOR = (0,0,0.45)
 GRID_SPACE = 40
-
+CANT_FLOCKS = 5
 MAX_X_C = 800
 MIN_X_C = -MAX_X_C
 MAX_Y_C = 800
@@ -28,16 +28,16 @@ D_MIN_Z_C = MIN_Z_C / 2
 D_MAX_Z_C = MAX_Z_C / 2
 flocks = []
 col_fu = []
-for i in range(5):
+for i in range(CANT_FLOCKS):
     flocks.append(Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C))
     rr = r.random()
     rg = r.random()
     rb = r.random()
     col_fu.append(lambda percent: (1-percent*rr,1-percent*rg,1-percent*rb,))
 LARGO_FLOCK = len(flocks[0])
-last_max_flock = [0] * LARGO_FLOCK
+last_max_flocks = [0] * CANT_FLOCKS
 #----------------------------------------------------------------------------------------------#
-
+# los walls no se están usando
 def set_wall_grid():
     glColor3f(*GRID_COLOR)
     for i in np.arange(D_MIN_Y_C,D_MAX_Y_C+1,GRID_SPACE):
@@ -103,13 +103,18 @@ def reshape(width, height):
     glLoadIdentity()
 
 
-def flocking_process(flock,conn):
+def flocking_process(id,flock,conn,flock_info_queue):
     flag = True
     while flag:
         flock.flocking()
         for boid_data in flock.show():
             conn.send(boid_data)
         conn.recv()
+        try:
+            flock_info_queue.put_nowait((id,flock.last_max_flock))
+        except Exception:
+            pass
+
 
 async def show_boid(conn,cant,color_function):
     i = 0
@@ -122,6 +127,7 @@ async def show_boid(conn,cant,color_function):
         i = i + 1
     conn.send(True)
 
+
 # estoy usando len(flock) asumiendo que todos tienen el mismo largo
 async def run_show_boid():
     tasks = []
@@ -130,6 +136,14 @@ async def run_show_boid():
         tasks.append(show_boid(pipes[i][0],LARGO_FLOCK,col_fu[i]))
     await asyncio.gather(*tasks)
 
+
+def consume_queue():
+    for i in range(10):
+        try:
+            (i,last_max_flock) = flock_info_queue.get_nowait()
+            last_max_flocks[i] = last_max_flock
+        except Exception:
+            break
 pa = 0.1
 cpos_x = MAX_X_C-200
 cpos_y = MAX_Y_C-200
@@ -137,6 +151,7 @@ cpos_z = MIN_Z_C-200
 lkat_x = 0
 lkat_y = 0
 lkat_z = 0
+
 
 def setOrthographicProjection():
 	# switch to projection mode
@@ -150,10 +165,13 @@ def setOrthographicProjection():
 	gluOrtho2D(MIN_X_C, MAX_X_C, MAX_Y_C, MIN_Y_C)
 	#switch back to modelview mode
 	glMatrixMode(GL_MODELVIEW)
+
+
 def restorePerspectiveProjection():
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
+
 
 def display():
     global pa,cpos_x,cpos_z
@@ -166,23 +184,25 @@ def display():
     gluLookAt(cpos_x,cpos_y,cpos_z,lkat_x,lkat_y,lkat_z,0,1,0)
     pa = pa + 0.01
     glBegin(GL_LINES)
-    set_bottom_grid()
+    set_bottom_grid()                       # Grid inferior
     #set_wall_grid()
     glEnd()
     glBegin(GL_POINTS)
-    asyncio.run(run_show_boid())
+    asyncio.run(run_show_boid())            # Mostrar los boid async
     glEnd()
     glBegin(GL_LINES)
-    set_upper_grid()
+    set_upper_grid()                        # Grid superior
     glEnd()
-    draw_coords()
+    draw_coords()                           # Mostrar ejes en el 0,0 y el producto cruz
+    consume_queue()                         # Consumir cola de info flock
     setOrthographicProjection()
     glPushMatrix()
     glLoadIdentity()
-    print_menu(MIN_X_C+30,MIN_Y_C+30)
+    print_menu(MIN_X_C+30,MIN_Y_C+30)       # Mostrar menu (aunque no es un menu)
     glPopMatrix()
     restorePerspectiveProjection()
     glFlush()    
+
 
 def print_menu(x,y):
     font = GLUT_BITMAP_9_BY_15
@@ -197,18 +217,23 @@ def print_menu(x,y):
     glRasterPos2f(col(0),row(1))
     for c in f'Flocks: {len(flocks):}':
         glutBitmapCharacter(font ,ord(c))
-    for i,f in enumerate(flocks):
-        glRasterPos2f(col(0),row(2+i))
-        for c in f'F{i:}: {f.last_max_flock}':
+    glRasterPos2f(col(0),row(2))
+    for c in f'Maximo flock actual:':
+        glutBitmapCharacter(font ,ord(c))
+    for i in range(CANT_FLOCKS):
+        glRasterPos2f(col(0),row(3+i))
+        for c in f'F{i+1}: {last_max_flocks[i]}':
             glutBitmapCharacter(font ,ord(c))
+
 
 pipes = []
 processes = []
+flock_info_queue = Queue(10)        # Cola de info flock
 
 for i in range(len(flocks)):
     p_conn, c_conn = Pipe()
     pipes.append((p_conn,c_conn,))
-    p = Process(target=flocking_process,args=(flocks[i],c_conn,))
+    p = Process(target=flocking_process,args=(i,flocks[i],c_conn,flock_info_queue,))
     p.daemon = True
     p.start()
     processes.append(p)
