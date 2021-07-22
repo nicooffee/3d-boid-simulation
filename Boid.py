@@ -3,12 +3,46 @@ import random as r
 import Vector as v
 import time
 
+
+"""#################################################################
+
+VELM_MIN = Velocidad mínima del boid.
+VELM_MAX = Velocidad máxima del boid.
+ACLM_MIN = Aceleración mínima del boid.
+ACLM_MAX = Aceleración máxima del boid.
+CONC_MIN = Conciencia mínima del boid
+CONC_MAX = Conciencia máxima del boid.
+
+#################################################################"""
+
 VELM_MIN = 10.0
 VELM_MAX = 20.0
 ACLM_MIN = 2.5
 ACLM_MAX = 3.5
 CONC_MIN = 10
 CONC_MAX = 20
+
+"""#################################################################
+Clase Boid
+
+Clase que representa a un boid en la simulación. Los parámetros de
+velocidad, aceleración y conciencia son calculados aleatoriamente
+según las variables globales del módulo.
+
+La posición del boid es calculada aleatoriamente dentro de los
+límites entregados en el constructor.
+
+id              = id del boid.
+radio           = Rango de visión.
+angulo_vision   = Ángulo de visión en [0,180] grados.
+[xyz]_limits    = Límites de posición.
+posicion        = Posición en el espacio
+velocidad       = Vector de velocidad
+velocidad_max   = Magnitud máxima del vector de velocidad
+fuerza_max      = Magnitudad máxima del vector de aceleración
+conciencia      = Cantidad de boids a considerar en el movimiento
+
+#################################################################"""
 class Boid:
     def __init__(self,id,radio,min_x,max_x,min_y,max_y,min_z,max_z):
         self.id = id
@@ -28,7 +62,16 @@ class Boid:
         self.conciencia = r.randint(CONC_MIN,CONC_MAX)
         self.last_boid_in_range = 0
 
+    """mover:
 
+        Método para actualizar la posición del boid. El método
+        es llamado después de realizar el flocking. Antes de actualizar la posición,
+        se comprueba si la posición x,y,z del boid está dentro del [0,5]% o [95,100]%
+        de cada [xyz]_limits. Si se cumple, se suman vectores de aceleración contrarios
+        a los límites establecidos. La aceleración total se suma al vector de velocidad
+        y el vector de velocidad es sumado a la posición.
+
+    """
     def mover(self):
         self.velocidad = v.limit(self.velocidad,self.velocidad_max)
         self.posicion = self.posicion + self.velocidad
@@ -68,7 +111,19 @@ class Boid:
             acl_rebote_z = v.set_mag(np.array([0,0,-1]),4*self.fuerza_max*inner_p)
         self.velocidad = self.velocidad + acl_rebote_x + acl_rebote_y + acl_rebote_z
 
+    """flock
+    
+        Método que calcula los 3 vectores de aceleración del boid según
+        una lista de flocks a considerar (alineamiento, cohesion y separacion).
+        
+        Se iteran los boids con el límite de conciencia y se comprueba si es
+        que el boid está en el rango de visión del boid. Si se cumple, se agrega
+        la influencia del boid a los 3 vectores de aceleración. 
 
+        Cuando se recorren todos los boids, se actualizan los vectores de aceleración
+        según los límites establecidos y finalmente la aceleración final del boid se
+        reemplaza por la suma de los 3 vectores.
+    """
     def flock(self,flock):
         suma_a = np.zeros(3) #vector alineamiento
         suma_c = np.zeros(3) #vector cohesion
@@ -113,6 +168,13 @@ class Boid:
     def distancia(self,boid):
         return np.linalg.norm(self.posicion-boid.posicion)
 
+
+    """ en_rango
+
+        Método para calcular el ángulo entre dos vectores. Se utiliza 
+        el vector de velocidad de self (hacia donde mira) y la posición del
+        boid a comparar. Se retorna True si boid está dentro del rango de visión.
+    """
     def en_rango(self,boid):
         return self.distancia(boid) <= self.radio and v.angle(self.velocidad,boid.posicion-self.posicion) <= self.angulo_vision
 

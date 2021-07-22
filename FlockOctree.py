@@ -2,7 +2,39 @@ import sys
 sys.path.append('./octrees')
 from octrees import Octree
 from Boid import Boid
+
+"""#################################################################
+Clase FlockInfo
+
+Clase utilizada para enviar la información de un Flock.
+#################################################################"""
+class FlockInfo:
+    def __init__(self,last_max_flock,cant_flocks):
+        self._last_max_flock = last_max_flock
+        self._cant_flocks = cant_flocks
+    
+    @property
+    def last_max_flocks(self):
+        return self._last_max_flock
+
+    @property
+    def cant_flocks(self):
+        return self._cant_flocks
+
+
+
+"""#################################################################
+Clase Flock
+
+Clase utilizada para mantener un Flock en movimiento.
+Atributos:
+    boids           = Lista de boids
+    octree          = Octree de boids
+    last_max_flock  = Máximo flock en el último instante
+
+#################################################################"""
 class Flock:
+    # Constructor
     def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=150,cant=40):
         self.boids = list()
         self.octree = Octree(((min_x-10, max_x+10), (min_y-10, max_y+10), (min_z-10, max_z+10)))
@@ -11,17 +43,31 @@ class Flock:
             b = Boid(i,radio,min_x,max_x,min_y,max_y,min_z,max_z)
             self.boids.append(b)
             self.octree.insert(b.coords(),b)
+    # Iterador
     def __iter__(self):
         for boid in self.boids:
             yield boid
-
+    # Cantidad de flocks para len(object)
     def __len__(self):
         return len(self.boids)
 
+    # get_info:
+    # Retorna objeto FlockInfo con la información del flock.
+    def get_info(self):
+        return FlockInfo(self.last_max_flock,len(self.boids))
+
+    # show:
+    # Iterador de coordenadas de un boid para mostrar en pantalla.
     def show(self):
         for boid in self.boids:
             yield (boid.show(),boid.last_boid_in_range)
 
+    # flocking:
+    # Método para realizar el movimiento de todos los boids.
+    # Por cada boid, se utiliza un Octree para encontrar todos los boids cercanos
+    # a un boid respecto a una distancia.
+    # El boid es eliminado del octree durante las operaciones y agregado al 
+    # finalizar.
     def flocking(self):
         self.last_max_flock = 0 #maximo flock de esta tanda
         for boid in self.boids:
@@ -41,7 +87,7 @@ class Flock:
 
 
 
-
+#tests
 if __name__ == '__main__':
     MAX_X_C = 800
     MIN_X_C = -MAX_X_C

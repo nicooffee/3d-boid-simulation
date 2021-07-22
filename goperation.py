@@ -1,3 +1,11 @@
+"""#################################################################
+Funciones para calcular las matrices de transformaciones
+geométricas.
+
+Todas las funciones están implementadas en 2D, excepto 
+rotate_arbitrary, que entrega una matriz en 3D.
+#################################################################"""
+
 import numpy as np
 import functools as ft
 def translate(tx,ty):
@@ -38,17 +46,13 @@ def compose(tr_list):
     tr_list.reverse()
     return ft.reduce(lambda M,N: M*N,tr_list)
 
-def rodrigues_rotation(axis,angle):
-    r = 2*np.pi*angle / 360
-    I = np.identity(3)
-    K = np.matrix([
-        [0,-axis.item(2,0),axis.item(1,0)],
-        [axis.item(2,0),0,axis.item(0,0)],
-        [-axis.item(1,0),axis.item(0,0),0]
-    ])
-    R = I + np.sin(r)*K + (1-np.cos(r))*(K*K)
-    return R
 
+""" rotate_arbitrary
+
+    Función para calcular la matriz de rotación respecto a 
+    un ángulo y un eje arbitrario en 3D. 
+
+"""
 def rotate_arbitrary(axis,angle):
     u,v,w = axis
     r = 2*np.pi*angle / 360
