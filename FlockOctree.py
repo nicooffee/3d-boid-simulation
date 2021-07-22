@@ -3,9 +3,10 @@ sys.path.append('./octrees')
 from octrees import Octree
 from Boid import Boid
 class Flock:
-    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=150,cant=35):
+    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=150,cant=40):
         self.boids = list()
         self.octree = Octree(((min_x-10, max_x+10), (min_y-10, max_y+10), (min_z-10, max_z+10)))
+        self.last_max_flock = 0
         for i in range(cant):
             b = Boid(i,radio,min_x,max_x,min_y,max_y,min_z,max_z)
             self.boids.append(b)
@@ -22,6 +23,7 @@ class Flock:
             yield (boid.show(),boid.last_boid_in_range)
 
     def flocking(self):
+        self.last_max_flock = 0 #maximo flock de esta tanda
         for boid in self.boids:
             p = boid.coords()
             try:
@@ -29,7 +31,8 @@ class Flock:
                 dis_cor_val = self.octree.by_distance_from_point(p,boid.radio)
                 boid.aceleracion = boid.flock(list(map(lambda dcv_tuple: dcv_tuple[2],dis_cor_val)))
                 boid.mover()
-                #yield (boid.show(),boid.last_boid_in_range)
+                if boid.last_boid_in_range > self.last_max_flock:
+                    self.last_max_flock = boid.last_boid_in_range
                 self.octree.insert(boid.coords(),boid)
             except Exception as e:
                 print("error", e.__class__,e)

@@ -96,7 +96,7 @@ class Boid:
             suma_r = np.divide(suma_r,boid_added)
             suma_r = v.set_mag(suma_r,self.velocidad_max)
             suma_r = suma_r - self.velocidad
-        self.last_boid_in_range = boid_in_range
+        self.last_boid_in_range = len(flock)#cambiado de boid_in_range
         suma_a = v.limit(suma_a,self.fuerza_max)
         suma_r = v.limit(suma_r,self.fuerza_max)
         suma_c = v.limit(suma_c,self.fuerza_max)
