@@ -35,7 +35,7 @@ Atributos:
 #################################################################"""
 class Flock:
     # Constructor
-    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=150,cant=40):
+    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=150,cant=60):
         self.boids = list()
         self.octree = Octree(((min_x-10, max_x+10), (min_y-10, max_y+10), (min_z-10, max_z+10)))
         self.last_max_flock = 0
@@ -75,7 +75,12 @@ class Flock:
             try:
                 self.octree.remove(p)
                 dis_cor_val = self.octree.by_distance_from_point(p,boid.radio)
-                boid.aceleracion = boid.flock(list(map(lambda dcv_tuple: dcv_tuple[2],dis_cor_val)))
+                boids_list = []
+                for (i,b) in enumerate(map(lambda dcv_tuple: dcv_tuple[2],dis_cor_val)): #limitar con conciencia
+                    boids_list.append(b)
+                    if i>=boid.conciencia:
+                        break
+                boid.aceleracion = boid.flock(boids_list)
                 boid.mover()
                 if boid.last_boid_in_range > self.last_max_flock:
                     self.last_max_flock = boid.last_boid_in_range

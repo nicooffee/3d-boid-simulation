@@ -31,6 +31,7 @@ import asyncio
 from ctypes import *
 from multiprocessing import Process,Pipe,Queue
 import random as r
+import time
 GRID_COLOR  = (0,0,0.45)
 BG_COLOR    = (0.9,0.9,0.9,1)
 GRID_SPACE = 40
@@ -167,10 +168,10 @@ def flocking_process(id,flock,conn,flock_info_queue):
         for boid_data in flock.show():
             conn.send(boid_data)
         conn.recv()
-        try:
-            flock_info_queue.put_nowait((id,flock.get_info()))
-        except Exception:
-            pass
+        #try:
+        #    flock_info_queue.put_nowait((id,flock.get_info()))
+        #except Exception:
+        #    pass
 
 """show_boid
     Función asíncrona para mostrar un boid en pantalla. Recibe
@@ -237,8 +238,12 @@ def restorePerspectiveProjection():
 """display
     Función principal que muestra el contenido de la simulación.
 """
+sum_time = 0
+it_count = 0
 def display():
-    global cpos_x,cpos_z
+    global cpos_x,cpos_z,it_count,sum_time
+    it_count = it_count + 1
+    t_start = time.process_time()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glClearColor(*BG_COLOR)
     glPointSize(5.0)
@@ -258,14 +263,19 @@ def display():
     glEnd()
     if d_coors:
         draw_coords()                       # Mostrar ejes en el 0,0 y el producto cruz
-    consume_queue()                         # Consumir cola de info flock
+    #consume_queue()                         # Consumir cola de info flock
     setOrthographicProjection()
     glPushMatrix()
     glLoadIdentity()
+    t_end = time.process_time()
+    sum_time = sum_time + (t_end - t_start)
     print_menu(MIN_X_C+30,MIN_Y_C+30)       # Mostrar menu (aunque no es un menu)
     glPopMatrix()
     restorePerspectiveProjection()
-    glFlush()    
+    glFlush()
+    if it_count == 100:
+        sum_time = 0
+        it_count = 0
 
 """print_menu
     Función que muestra el texto en pantalla.
@@ -284,17 +294,26 @@ def print_menu(x,y):
     for c in f'Flocks: {CANT_FLOCKS:}':
         glutBitmapCharacter(font ,ord(c))
     glRasterPos2f(col(0),row(2))
-    for c in f'Maximo flock actual:':
+    for c in f'FPS :{it_count/sum_time:.3f}':
         glutBitmapCharacter(font ,ord(c))
-    for i in range(CANT_FLOCKS):
-        glRasterPos2f(col(0),row(3+i))
-        for c in f'F{i+1}: {flocks_info[i].last_max_flocks:3} /{flocks_info[i].cant_flocks:3}':
-            glutBitmapCharacter(font ,ord(c))
+    glRasterPos2f(col(0),row(49))
+    for c in f'Controles':
+        glutBitmapCharacter(font ,ord(c))
+    glRasterPos2f(col(4),row(50))
+    for c in f'WASD -> Movimientos de cámara':
+        glutBitmapCharacter(font ,ord(c))
+    glRasterPos2f(col(4),row(51))
+    for c in f'B -> Mostrar/Ocultar ejes':
+        glutBitmapCharacter(font ,ord(c))
+    #for i in range(CANT_FLOCKS):
+    #    glRasterPos2f(col(0),row(3+i))
+    #    for c in f'F{i+1}: {flocks_info[i].last_max_flocks:3} /{flocks_info[i].cant_flocks:3}':
+    #        glutBitmapCharacter(font ,ord(c))
 
 
 pipes = []                          # Conexiones entre proceso principal y flocks
 processes = []                      # Procesos
-flock_info_queue = Queue(10)        # Cola de info flock
+flock_info_queue = Queue(CANT_FLOCKS)        # Cola de info flock
 d_coors = True                      # Mostrar coordenadas
 
 # Creación de procesos por cada flock
@@ -352,7 +371,7 @@ def keyboard_options(key,x,y):
         cpos_z = new_pos_xz.item(1,0)
     elif bool(re.match('[bB]',d_key)):
         d_coors = False if d_coors else True
-
+    
 
 glutInit()
 glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE)
