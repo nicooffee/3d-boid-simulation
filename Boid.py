@@ -1,5 +1,7 @@
 import numpy as np
 import random as r
+
+from numpy.core.numeric import cross
 import Vector as v
 import time
 
@@ -72,6 +74,20 @@ class Boid:
         y el vector de velocidad es sumado a la posición.
 
     """
+    def cone_vertices(self):
+        vertices = []
+        v_unit = self.velocidad/np.linalg.norm(self.velocidad) * 16
+        ver_atras = self.posicion-v_unit
+        vertices.append(self.posicion+v_unit)
+        vertices.append(ver_atras)
+        cross_unit = np.cross(self.posicion,ver_atras)
+        cross_unit = cross_unit / np.linalg.norm(cross_unit) * 8
+        ver_costado = ver_atras + cross_unit
+        vertices.append(self.posicion+v_unit)
+        vertices.append(ver_costado)
+        vertices.append(self.posicion+v_unit)
+        vertices.append(ver_atras - cross_unit)
+        return vertices
     def mover(self):
         self.velocidad = v.limit(self.velocidad,self.velocidad_max)
         self.posicion = self.posicion + self.velocidad
@@ -159,7 +175,7 @@ class Boid:
 
 
     def show(self):
-        return self.posicion
+        return self.cone_vertices()
 
     def coords(self):
         p = self.posicion

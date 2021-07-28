@@ -166,7 +166,7 @@ def flocking_process(id,flock,conn,flock_info_queue):
     while flag:
         flock.flocking()
         for boid_data in flock.show():
-            conn.send(boid_data)
+            conn.send((id,boid_data,))
         conn.recv()
         #try:
         #    flock_info_queue.put_nowait((id,flock.get_info()))
@@ -179,14 +179,30 @@ def flocking_process(id,flock,conn,flock_info_queue):
     Cuando termina el ciclo, le envía un mensaje al proceso que
     le indica que ya finalizó.
 """
+quadratic = []
+for _ in range(CANT_FLOCKS):
+    q_list = [gluNewQuadric()] * LARGO_FLOCK
+    quadratic.append(q_list)
+    for q in q_list:
+        gluQuadricDrawStyle(q,GLU_FILL)
 async def show_boid(conn,cant,color_function):
     i = 0
     while i<cant: #revisar esto
-        coor,boid_in_range = conn.recv()
+        (id,(coor,boid_in_range,v_dir)) = conn.recv()
         percent = (boid_in_range*2)/cant
         color = color_function(percent)
+        #v_dir_n = v_dir / np.linalg.norm(v_dir)
+        #z = np.array([0,0,1])
+        #cos_ang = np.dot(v_dir_n,z)
+        #cross = np.cross(v_dir_n,z)
         glColor3f(*color)
-        glVertex3f(*(coor))
+        #glLoadIdentity()
+        #glTranslatef(*(coor))
+        #glRotatef(-np.rad2deg(np.arccos(cos_ang)),*(cross))
+        #q = quadratic[id][i]
+        #gluCylinder(q,7,0,40,3,3)
+        for c in coor:
+            glVertex3f(*(c))
         i = i + 1
     conn.send(True)
 
@@ -247,6 +263,7 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glClearColor(*BG_COLOR)
     glPointSize(5.0)
+    glLineWidth(2)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     glTranslatef(0,0,MAX_Z_C*(1.8))
@@ -254,11 +271,13 @@ def display():
     glBegin(GL_LINES)
     set_bottom_grid()                       # Grid inferior
     #set_wall_grid()
-    glEnd()
-    glBegin(GL_POINTS)
+    #glEnd()
+    #glBegin(GL_LINES)
+    #glPushMatrix()
     asyncio.run(run_show_boid())            # Mostrar los boid async
-    glEnd()
-    glBegin(GL_LINES)
+    #glPopMatrix()
+    #glEnd()
+    #glBegin(GL_LINES)
     set_upper_grid()                        # Grid superior
     glEnd()
     if d_coors:
@@ -381,7 +400,17 @@ glOrtho(MIN_X_C,MAX_X_C,MIN_Y_C,MAX_Y_C,MIN_Z_C,MAX_Z_C)
 glutCreateWindow("Flocking simulation")
 glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 glEnable(GL_DEPTH_TEST)
-glShadeModel(GL_FLAT)
+glDisable(GL_POLYGON_SMOOTH)
+glEnable(GL_COLOR_MATERIAL)
+glShadeModel(GL_SMOOTH)
+glMaterialfv(GL_FRONT,GL_AMBIENT,(0,0,1,1))
+glMaterialfv(GL_FRONT, GL_SPECULAR, (1,1,1,1))
+glMaterialfv(GL_FRONT, GL_SHININESS, (128))
+glLightfv(GL_LIGHT0,GL_POSITION,(0,D_MAX_Y_C,0,1))
+glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, (0,D_MIN_Y_C,0))
+glLightfv(GL_LIGHT0,GL_SPOT_EXPONENT,2)
+glEnable(GL_LIGHTING)
+glEnable(GL_LIGHT0)
 glDisable(GL_CULL_FACE)
 glutReshapeFunc(reshape)
 glutKeyboardFunc(keyboard_options)

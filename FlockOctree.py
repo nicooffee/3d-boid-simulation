@@ -35,7 +35,7 @@ Atributos:
 #################################################################"""
 class Flock:
     # Constructor
-    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=150,cant=60):
+    def __init__(self,min_x,max_x,min_y,max_y,min_z,max_z,radio=150,cant=30):
         self.boids = list()
         self.octree = Octree(((min_x-10, max_x+10), (min_y-10, max_y+10), (min_z-10, max_z+10)))
         self.last_max_flock = 0
@@ -60,7 +60,7 @@ class Flock:
     # Iterador de coordenadas de un boid para mostrar en pantalla.
     def show(self):
         for boid in self.boids:
-            yield (boid.show(),boid.last_boid_in_range)
+            yield (boid.show(),boid.last_boid_in_range,boid.velocidad)
 
     # flocking:
     # Método para realizar el movimiento de todos los boids.
