@@ -18,24 +18,43 @@
 #   CANT_FLOCKS = Cantidad de flocks a simular.
 #   LARGO_FLOCK = Cantidad de boid en un flock.
 #################################################################"""
-import numpy as np
-import re
-import goperation as go
-import Vector as v
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from FlockOctree import Flock,FlockInfo
-from Boid import Boid
-import asyncio
 from ctypes import *
 from multiprocessing import Process,Pipe,Queue
+import sys
+import numpy as np
 import random as r
+import re
+import asyncio
 import time
+import goperation as go
+import Vector as v
+from FlockOctree import Flock,FlockInfo
+from Boid import Boid
+####################################################################
+def check_input():
+    flag = True
+    for arg in sys.argv[1:]:
+        if bool(re.fullmatch('^(?![0-9]+).*$|0+',arg)):
+            flag = False
+    return flag
+
+CANT_FLOCKS = 5
+LARGO_FLOCK = 20
+RADIO_FLOCK = 150
+if len(sys.argv)==4 and check_input():
+    CANT_FLOCKS = int(sys.argv[1])
+    LARGO_FLOCK = int(sys.argv[2])
+    RADIO_FLOCK = int(sys.argv[3])
+else:
+    print("Error: Parámetros iniciales incorrectos.")
+    quit()
+####################################################################
 GRID_COLOR  = (0,0,0.45)
 BG_COLOR    = (0.9,0.9,0.9,1)
 GRID_SPACE = 40
-CANT_FLOCKS = 5
 MAX_X_C = 800
 MIN_X_C = -MAX_X_C
 MAX_Y_C = 800
@@ -50,13 +69,16 @@ D_MIN_Z_C = MIN_Z_C / 2
 D_MAX_Z_C = MAX_Z_C / 2
 flocks = []
 col_fu = []
-for i in range(CANT_FLOCKS):
-    flocks.append(Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C))
+rand_tuples = []
+for _ in range(CANT_FLOCKS):
     rr = r.random()
     rg = r.random()
     rb = r.random()
-    col_fu.append(lambda percent: (1-percent*rr,1-percent*rg,1-percent*rb,))
-LARGO_FLOCK = len(flocks[0])
+    rand_tuples.append((rr,rg,rb,))
+col_fu = list(map(lambda rt: (lambda percent: (1-(percent*rt[0]),1-percent*rt[1],1-percent*rt[2])),rand_tuples))
+for i in range(CANT_FLOCKS):
+    flocks.append(Flock(D_MIN_X_C,D_MAX_X_C,D_MIN_Y_C,D_MAX_Y_C,D_MIN_Z_C,D_MAX_Z_C,radio=RADIO_FLOCK,cant=LARGO_FLOCK))
+    col_fu.append(col_fu[i])
 flocks_info = [FlockInfo(0,LARGO_FLOCK)] * CANT_FLOCKS
 
 cpos_x = MAX_X_C-200        # Posición x cámara
@@ -310,19 +332,23 @@ def print_menu(x,y):
     for c in f'PCAM: x:{cpos_x:.3f} y:{cpos_y:.3f} z:{cpos_z:.3f}':
         glutBitmapCharacter(font ,ord(c))
     glRasterPos2f(col(0),row(1))
-    for c in f'Flocks: {CANT_FLOCKS:}':
+    for c in f'Flocks: {CANT_FLOCKS:} | Boids por flock: {LARGO_FLOCK} | Rango de visión: {RADIO_FLOCK}u':
         glutBitmapCharacter(font ,ord(c))
     glRasterPos2f(col(0),row(2))
     for c in f'FPS :{it_count/sum_time:.3f}':
         glutBitmapCharacter(font ,ord(c))
-    glRasterPos2f(col(0),row(49))
+    glRasterPos2f(col(0),row(48))
     for c in f'Controles':
         glutBitmapCharacter(font ,ord(c))
-    glRasterPos2f(col(4),row(50))
+    glRasterPos2f(col(4),row(49))
     for c in f'WASD -> Movimientos de cámara':
         glutBitmapCharacter(font ,ord(c))
-    glRasterPos2f(col(4),row(51))
+    glRasterPos2f(col(4),row(50))
     for c in f'B -> Mostrar/Ocultar ejes':
+        glutBitmapCharacter(font ,ord(c))
+    glColor3f(1,0,0)
+    glRasterPos2f(col(4),row(51))
+    for c in f'ESC -> Salir':
         glutBitmapCharacter(font ,ord(c))
     #for i in range(CANT_FLOCKS):
     #    glRasterPos2f(col(0),row(3+i))
@@ -403,14 +429,18 @@ glEnable(GL_DEPTH_TEST)
 glDisable(GL_POLYGON_SMOOTH)
 glEnable(GL_COLOR_MATERIAL)
 glShadeModel(GL_SMOOTH)
-glMaterialfv(GL_FRONT,GL_AMBIENT,(0,0,1,1))
-glMaterialfv(GL_FRONT, GL_SPECULAR, (1,1,1,1))
-glMaterialfv(GL_FRONT, GL_SHININESS, (128))
-glLightfv(GL_LIGHT0,GL_POSITION,(0,D_MAX_Y_C,0,1))
-glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, (0,D_MIN_Y_C,0))
-glLightfv(GL_LIGHT0,GL_SPOT_EXPONENT,2)
-glEnable(GL_LIGHTING)
-glEnable(GL_LIGHT0)
+#glMaterialfv(GL_FRONT,GL_AMBIENT,(0,0,1,1))
+#glMaterialfv(GL_FRONT, GL_SPECULAR, (1,1,1,1))
+#glMaterialfv(GL_FRONT, GL_SHININESS, (128))
+#glLightfv(GL_LIGHT0,GL_POSITION,(0,D_MAX_Y_C,0,1))
+#glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, (0,0,0))
+#glLightfv(GL_LIGHT0,GL_SPOT_EXPONENT,2)
+#glLightfv(GL_LIGHT1,GL_POSITION,(D_MIN_X_C,D_MAX_Y_C,D_MIN_Z_C,1))
+#glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, (0,0,0))
+#glLightfv(GL_LIGHT1,GL_SPOT_EXPONENT,2)
+#glEnable(GL_LIGHTING)
+#glEnable(GL_LIGHT0)
+#glEnable(GL_LIGHT1)
 glDisable(GL_CULL_FACE)
 glutReshapeFunc(reshape)
 glutKeyboardFunc(keyboard_options)
