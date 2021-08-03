@@ -42,12 +42,14 @@ def check_input():
     return flag
 
 CANT_FLOCKS = 5
-LARGO_FLOCK = 20
+LARGO_FLOCK = 30
 RADIO_FLOCK = 150
 if len(sys.argv)==4 and check_input():
     CANT_FLOCKS = int(sys.argv[1])
     LARGO_FLOCK = int(sys.argv[2])
     RADIO_FLOCK = int(sys.argv[3])
+elif len(sys.argv)==1:
+    pass
 else:
     print("Error: Parámetros iniciales incorrectos.")
     quit()
@@ -190,10 +192,6 @@ def flocking_process(id,flock,conn,flock_info_queue):
         for boid_data in flock.show():
             conn.send((id,boid_data,))
         conn.recv()
-        #try:
-        #    flock_info_queue.put_nowait((id,flock.get_info()))
-        #except Exception:
-        #    pass
 
 """show_boid
     Función asíncrona para mostrar un boid en pantalla. Recibe
@@ -213,16 +211,7 @@ async def show_boid(conn,cant,color_function):
         (id,(coor,boid_in_range,v_dir)) = conn.recv()
         percent = (boid_in_range*2)/cant
         color = color_function(percent)
-        #v_dir_n = v_dir / np.linalg.norm(v_dir)
-        #z = np.array([0,0,1])
-        #cos_ang = np.dot(v_dir_n,z)
-        #cross = np.cross(v_dir_n,z)
         glColor3f(*color)
-        #glLoadIdentity()
-        #glTranslatef(*(coor))
-        #glRotatef(-np.rad2deg(np.arccos(cos_ang)),*(cross))
-        #q = quadratic[id][i]
-        #gluCylinder(q,7,0,40,3,3)
         for c in coor:
             glVertex3f(*(c))
         i = i + 1
@@ -292,19 +281,11 @@ def display():
     gluLookAt(cpos_x,cpos_y,cpos_z,lkat_x,lkat_y,lkat_z,0,1,0)
     glBegin(GL_LINES)
     set_bottom_grid()                       # Grid inferior
-    #set_wall_grid()
-    #glEnd()
-    #glBegin(GL_LINES)
-    #glPushMatrix()
     asyncio.run(run_show_boid())            # Mostrar los boid async
-    #glPopMatrix()
-    #glEnd()
-    #glBegin(GL_LINES)
     set_upper_grid()                        # Grid superior
     glEnd()
     if d_coors:
         draw_coords()                       # Mostrar ejes en el 0,0 y el producto cruz
-    #consume_queue()                         # Consumir cola de info flock
     setOrthographicProjection()
     glPushMatrix()
     glLoadIdentity()
@@ -350,10 +331,6 @@ def print_menu(x,y):
     glRasterPos2f(col(4),row(51))
     for c in f'ESC -> Salir':
         glutBitmapCharacter(font ,ord(c))
-    #for i in range(CANT_FLOCKS):
-    #    glRasterPos2f(col(0),row(3+i))
-    #    for c in f'F{i+1}: {flocks_info[i].last_max_flocks:3} /{flocks_info[i].cant_flocks:3}':
-    #        glutBitmapCharacter(font ,ord(c))
 
 
 pipes = []                          # Conexiones entre proceso principal y flocks
@@ -429,18 +406,6 @@ glEnable(GL_DEPTH_TEST)
 glDisable(GL_POLYGON_SMOOTH)
 glEnable(GL_COLOR_MATERIAL)
 glShadeModel(GL_SMOOTH)
-#glMaterialfv(GL_FRONT,GL_AMBIENT,(0,0,1,1))
-#glMaterialfv(GL_FRONT, GL_SPECULAR, (1,1,1,1))
-#glMaterialfv(GL_FRONT, GL_SHININESS, (128))
-#glLightfv(GL_LIGHT0,GL_POSITION,(0,D_MAX_Y_C,0,1))
-#glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, (0,0,0))
-#glLightfv(GL_LIGHT0,GL_SPOT_EXPONENT,2)
-#glLightfv(GL_LIGHT1,GL_POSITION,(D_MIN_X_C,D_MAX_Y_C,D_MIN_Z_C,1))
-#glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, (0,0,0))
-#glLightfv(GL_LIGHT1,GL_SPOT_EXPONENT,2)
-#glEnable(GL_LIGHTING)
-#glEnable(GL_LIGHT0)
-#glEnable(GL_LIGHT1)
 glDisable(GL_CULL_FACE)
 glutReshapeFunc(reshape)
 glutKeyboardFunc(keyboard_options)
