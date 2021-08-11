@@ -14,6 +14,7 @@ def translate(tx,ty):
         [0,1,ty],
         [0,0,1]])
 
+
 def rotate(angle):
     r = 2*np.pi*angle / 360
     ca = np.cos(r)
@@ -23,11 +24,13 @@ def rotate(angle):
         [sa, ca,0],
         [0 , 0 ,1]])
 
+
 def scale(sx,sy):
     return np.matrix(
         [[sx,0,0],
         [0,sy,0],
         [0,0, 1]])
+
 
 #La refleccion se hace en el punto x,y siendo el centro el origen
 def reflect(x,y):
@@ -36,11 +39,13 @@ def reflect(x,y):
     m3 = translate(x,y)
     return compose([m1,m2,m3])
 
+
 def shear(shx,shy):
     return np.matrix(
         [[1,shx,0],
         [shy, 1,0],
         [0 , 0 ,1]])
+
 
 def compose(tr_list):
     tr_list.reverse()

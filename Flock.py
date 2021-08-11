@@ -6,9 +6,11 @@ class Flock:
             b = Boid(i,radio,min_x,max_x,min_y,max_y,min_z,max_z)
             self.boids.append(b)
 
+
     def __iter__(self):
         for boid in self.boids:
             yield boid
+
 
     def __len__(self):
         return len(self.boids)

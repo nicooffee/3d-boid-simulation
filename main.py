@@ -199,12 +199,7 @@ def flocking_process(id,flock,conn,flock_info_queue):
     Cuando termina el ciclo, le envía un mensaje al proceso que
     le indica que ya finalizó.
 """
-quadratic = []
-for _ in range(CANT_FLOCKS):
-    q_list = [gluNewQuadric()] * LARGO_FLOCK
-    quadratic.append(q_list)
-    for q in q_list:
-        gluQuadricDrawStyle(q,GLU_FILL)
+
 async def show_boid(conn,cant,color_function):
     i = 0
     while i<cant: #revisar esto
@@ -244,23 +239,19 @@ def consume_queue():
 
 # Cambia la proyección a 2d para escribir el menu
 def setOrthographicProjection():
-	# switch to projection mode
 	glMatrixMode(GL_PROJECTION)
-	# save previous matrix which contains the
-	#settings for the perspective projection
 	glPushMatrix()
-	# reset matrix
 	glLoadIdentity()
-	# set a 2D orthographic projection
 	gluOrtho2D(MIN_X_C, MAX_X_C, MAX_Y_C, MIN_Y_C)
-	#switch back to modelview mode
 	glMatrixMode(GL_MODELVIEW)
+
 
 # Recupera la proyección luego de escribir el menu
 def restorePerspectiveProjection():
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
+
 
 """display
     Función principal que muestra el contenido de la simulación.
@@ -299,6 +290,7 @@ def display():
         sum_time = 0
         it_count = 0
 
+
 """print_menu
     Función que muestra el texto en pantalla.
 """
@@ -333,10 +325,10 @@ def print_menu(x,y):
         glutBitmapCharacter(font ,ord(c))
 
 
-pipes = []                          # Conexiones entre proceso principal y flocks
-processes = []                      # Procesos
-flock_info_queue = Queue(CANT_FLOCKS)        # Cola de info flock
-d_coors = True                      # Mostrar coordenadas
+pipes = []                              # Conexiones entre proceso principal y flocks
+processes = []                          # Procesos
+flock_info_queue = Queue(CANT_FLOCKS)   # Cola de info flock
+d_coors = True                          # Mostrar coordenadas
 
 # Creación de procesos por cada flock
 for i in range(len(flocks)):
@@ -347,6 +339,8 @@ for i in range(len(flocks)):
     p.start()
     processes.append(p)
 
+
+# Función que procesa el input
 def keyboard_options(key,x,y):
     global cpos_x,cpos_y,cpos_z,d_coors
     d_key = key.decode('utf-8')
